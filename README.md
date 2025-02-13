@@ -37,13 +37,7 @@ The requirements.txt file can be used to install the necessary packages into a v
 ## Run an experiment 
 
 ```shell
-python3 src/main.py 
---config=qmix_smac_latent
---env-config=sc2
-with
-agent=latent_ce_dis_rnn
-env_args.map_name=MMM2
-t_max=20050000
+python3 src/main.py --config=qmix_smac_latent--env-config=sc2 with agent=latent_ce_dis_rnn env_args.map_name=MMM2 t_max=20050000
 ```
 
 To test other maps, add parameters
