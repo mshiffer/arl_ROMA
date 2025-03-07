@@ -29,8 +29,8 @@ mac: "separate_mac"
 
 latent_dim: 3
 kl_loss_weight: 0.0001
-h_loss_weight: 0.0001
-var_floor: 0.002
+h_loss_weight: 0.05
+var_floor: 0.0001
 NN_HIDDEN_SIZE: 16
 dis_loss_weight: 0.001
 dis_time: 0
