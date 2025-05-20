@@ -170,12 +170,13 @@ def run_sequential(args, logger):
     logger.console_logger.info("Beginning training for {} timesteps".format(args.t_max))
 
     while runner.t_env <= args.t_max:
-
+        logger.console_logger.info(f'starting run loop starting episode {episode}')
         # Run for a whole episode at a time
-        episode_batch = runner.run(test_mode=False)
+        episode_batch = runner.run(logger=logger, test_mode=False)
         buffer.insert_episode_batch(episode_batch)
 
         if buffer.can_sample(args.batch_size):
+            logger.console_logger.info('starting train loop')
             episode_sample = buffer.sample(args.batch_size)
 
             # Truncate batch to only filled timesteps
