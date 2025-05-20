@@ -45,7 +45,7 @@ class EpisodeRunner:
         self.env.reset()
         self.t = 0
 
-    def run(self, logger, test_mode=False):
+    def run(self, test_mode=False):
         self.reset()
 
         terminated = False
@@ -55,7 +55,7 @@ class EpisodeRunner:
             self.mac.init_latent(batch_size=self.batch_size)
 
         while not terminated:
-            logger.console_logger.info(f'Running episode... at t = {self.t}')
+            self.logger.console_logger.info(f'Running episode... at t = {self.t}')
             pre_transition_data = {
                 "state": [self.env.get_state()],
                 "avail_actions": [self.env.get_avail_actions()],
