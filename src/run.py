@@ -66,10 +66,10 @@ def run(_run, _config, _log):
     os._exit(os.EX_OK)
 
 
-def evaluate_sequential(args, runner):
+def evaluate_sequential(args, runner, logger):
 
     for _ in range(args.test_nepisode):
-        runner.run(test_mode=True)
+        runner.run(logger=logger, test_mode=True)
 
     if args.save_replay:
         runner.save_replay()
@@ -155,7 +155,7 @@ def run_sequential(args, logger):
         runner.t_env = timestep_to_load
 
         if args.evaluate or args.save_replay:
-            evaluate_sequential(args, runner)
+            evaluate_sequential(args, runner, logger)
             return
 
     # start training
@@ -199,7 +199,7 @@ def run_sequential(args, logger):
 
             last_test_T = runner.t_env
             for _ in range(n_test_runs):
-                runner.run(test_mode=True)
+                runner.run(logger=logger, test_mode=True)
 
         if args.save_model and (runner.t_env - model_save_time >= args.save_model_interval or model_save_time == 0):
             model_save_time = runner.t_env
