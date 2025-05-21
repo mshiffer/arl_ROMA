@@ -138,6 +138,8 @@ class ParallelRunner:
             for idx, parent_conn in enumerate(self.parent_conns):
                 if not terminated[idx]:
                     data = parent_conn.recv()
+                    #self.logger.console_logger.info(data)
+
                     # Remaining data for this current timestep
                     post_transition_data["reward"].append((data["reward"],))
 
@@ -148,7 +150,9 @@ class ParallelRunner:
 
                     env_terminated = False
                     if data["terminated"]:
+                        self.logger.console_logger.info(f'episode terminated {data}')
                         final_env_infos.append(data["info"])
+
                     if data["terminated"] and not data["info"].get("episode_limit", False):
                         env_terminated = True
                     terminated[idx] = data["terminated"]
