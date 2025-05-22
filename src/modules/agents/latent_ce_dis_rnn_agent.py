@@ -6,6 +6,7 @@ import torch.distributions as D
 import math
 from tensorboardX import SummaryWriter
 import time
+from GlobalLatentHypernet import GlobalLatentHyperNet
 
 
 class LatentCEDisRNNAgent(nn.Module):
@@ -55,6 +56,15 @@ class LatentCEDisRNNAgent(nn.Module):
         self.mi= th.rand(args.n_agents*args.n_agents)
         self.dissimilarity = th.rand(args.n_agents*args.n_agents)
 
+        #mshiffer
+        self.global_hypernet = GlobalLatentHyperNet(
+        state_dim=self.args.state_shape,
+        obs_dim=self.embed_fc_input_size,
+        latent_dim=self.args.latent_dim,
+        hidden_dim=self.args.NN_HIDDEN_SIZE
+        ).to(self.args.device)
+
+
         if args.dis_sigmoid:
             print('>>> sigmoid')
             self.dis_loss_weight_schedule = self.dis_loss_weight_schedule_sigmoid
@@ -84,11 +94,33 @@ class LatentCEDisRNNAgent(nn.Module):
         inputs = inputs.reshape(-1, self.input_shape)
         h_in = hidden_state.reshape(-1, self.hidden_dim)
 
-        embed_fc_input = inputs[:, - self.embed_fc_input_size:]  # own features(unit_type_bits+shield_bits_ally)+id
+        # Extract input for the embed_net
+        embed_fc_input = inputs[:, -self.embed_fc_input_size:]  # own features(unit_type_bits+shield_bits_ally)+id
 
-        self.latent = self.embed_net(embed_fc_input)
-        self.latent[:, -self.latent_dim:] = th.clamp(th.exp(self.latent[:, -self.latent_dim:]), min=self.args.var_floor)  # var
+        # self.latent = self.embed_net(embed_fc_input)
+        # self.latent[:, -self.latent_dim:] = th.clamp(th.exp(self.latent[:, -self.latent_dim:]), min=self.args.var_floor)  # var
         #self.latent[:, -self.latent_dim:] = th.full_like(self.latent[:, -self.latent_dim:],1.0)
+
+        #mshiffer
+        # Generate final layer weights from global state
+        global_state = batch["state"][:, t, :].repeat_interleave(self.n_agents, dim=0)  # [bs * n_agents, state_dim]
+        z, kl_global = self.global_hypernet.sample_latent(global_state)
+        weights_vector = self.global_hypernet.weight_decoder(z)  # [bs * n_agents, final_layer_params]
+
+        # Split generated weights for the second layer
+        H = self.args.NN_HIDDEN_SIZE
+        output_dim = self.latent_dim * 2
+        W2 = weights_vector[:, :H * output_dim].view(-1, output_dim, H)
+        b2 = weights_vector[:, H * output_dim:].view(-1, output_dim)
+
+        # Pass input through fixed first layer of embed_net
+        h = self.embed_net[0](embed_fc_input)                      # Linear
+        h = self.embed_net[1](h) if self.embed_net[1] else h       # BatchNorm (if used)
+        h = self.embed_net[2](h)                                   # Activation
+
+        # Apply generated second layer manually
+        self.latent = th.bmm(h.unsqueeze(1), W2.transpose(1, 2)).squeeze(1) + b2
+        self.latent[:, -self.latent_dim:] = th.clamp(th.exp(self.latent[:, -self.latent_dim:]), min=self.args.var_floor)
 
         latent_embed = self.latent.reshape(self.bs * self.n_agents, self.latent_dim * 2)
 
@@ -98,7 +130,9 @@ class LatentCEDisRNNAgent(nn.Module):
 
         c_dis_loss = th.tensor(0.0).to(self.args.device)
         ce_loss = th.tensor(0.0).to(self.args.device)
-        loss = th.tensor(0.0).to(self.args.device)
+        #mshiffer
+        #loss = th.tensor(0.0).to(self.args.device)
+        loss = ce_loss + c_dis_loss + self.args.kl_global_weight * kl_global
 
         if train_mode and (not self.args.roma_raw):
             #gaussian_embed = D.Normal(latent_embed[:, :self.latent_dim], (latent_embed[:, self.latent_dim:]) ** (1 / 2))

@@ -150,7 +150,7 @@ class ParallelRunner:
 
                     env_terminated = False
                     if data["terminated"]:
-                        self.logger.console_logger.info(f'episode terminated {data}')
+                        self.logger.console_logger.info(f'episode terminated {data["info"]}')
                         final_env_infos.append(data["info"])
 
                     if data["terminated"] and not data["info"].get("episode_limit", False):
