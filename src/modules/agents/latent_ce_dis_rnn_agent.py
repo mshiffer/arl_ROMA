@@ -6,8 +6,7 @@ import torch.distributions as D
 import math
 from tensorboardX import SummaryWriter
 import time
-from GlobalLatentHypernet import GlobalLatentHyperNet
-
+from .GlobalLatentHypernet import GlobalLatentHyperNet
 
 class LatentCEDisRNNAgent(nn.Module):
     def __init__(self, input_shape, args):
