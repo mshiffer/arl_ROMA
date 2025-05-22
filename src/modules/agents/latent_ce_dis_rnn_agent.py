@@ -131,7 +131,8 @@ class LatentCEDisRNNAgent(nn.Module):
         ce_loss = th.tensor(0.0).to(self.args.device)
         #mshiffer
         #loss = th.tensor(0.0).to(self.args.device)
-        loss = ce_loss + c_dis_loss + self.args.kl_global_weight * kl_global
+        #loss = ce_loss + c_dis_loss + self.args.kl_global_weight * kl_global
+        loss = ce_loss + c_dis_loss + .001 * kl_global
 
         if train_mode and (not self.args.roma_raw):
             #gaussian_embed = D.Normal(latent_embed[:, :self.latent_dim], (latent_embed[:, self.latent_dim:]) ** (1 / 2))
